@@ -1,25 +1,464 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8">
-<title>AI 데일리 브리핑 — {{ generated_at }}</title></head>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>AI 데일리 브리핑 — {{ generated_at }}</title>
+<style>
+  /* ============ tokens ============ */
+  :root {
+    /* deep observatory ink, faint cool-blue tint */
+    --bg:        oklch(0.17 0.018 255);
+    --bg-2:      oklch(0.21 0.020 255);
+    --surface:   oklch(0.235 0.021 255);
+    --surface-2: oklch(0.275 0.022 255);
+    --line:      oklch(0.34 0.018 255);
+    --line-soft: oklch(0.30 0.016 255 / 0.6);
+
+    --ink:       oklch(0.96 0.006 255);
+    --ink-2:     oklch(0.80 0.012 255);
+    --muted:     oklch(0.66 0.014 255);
+
+    /* morning-sun accent (the briefing identity) */
+    --accent:    oklch(0.82 0.15 78);
+    --accent-dim: oklch(0.82 0.15 78 / 0.14);
+
+    --up:        oklch(0.78 0.16 152);
+    --down:      oklch(0.70 0.18 23);
+    --rain:      oklch(0.74 0.13 235);
+
+    --radius: 14px;
+    --gap: clamp(14px, 2.4vw, 24px);
+    --maxw: 1120px;
+    --mono: "SF Mono", "JetBrains Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+    --sans: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+            "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1200px 520px at 78% -8%, oklch(0.30 0.06 78 / 0.22), transparent 60%),
+      radial-gradient(900px 600px at -5% 0%, oklch(0.30 0.05 255 / 0.25), transparent 55%),
+      var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    letter-spacing: -0.005em;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: clamp(20px, 4vw, 44px) clamp(16px, 4vw, 36px) 72px; }
+
+  /* ============ masthead ============ */
+  .masthead {
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px 20px;
+    padding-bottom: 22px; margin-bottom: 30px;
+    border-bottom: 1px solid var(--line);
+  }
+  .brandmark {
+    display: inline-flex; align-items: center; gap: 11px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--accent);
+  }
+  .brandmark .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-dim), 0 0 16px 2px oklch(0.82 0.15 78 / 0.4);
+  }
+  .masthead h1 {
+    margin: 8px 0 0; font-size: clamp(1.9rem, 5.4vw, 3.1rem);
+    font-weight: 760; line-height: 1.02; letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+  .masthead h1 em { font-style: normal; color: var(--accent); }
+  .stamp {
+    margin-left: auto; text-align: right; font-family: var(--mono);
+    font-size: 12.5px; color: var(--muted); line-height: 1.5;
+  }
+  .stamp b { display: block; color: var(--ink-2); font-weight: 600; font-size: 13.5px; }
+
+  /* ============ layout ============ */
+  .grid { display: grid; gap: var(--gap); grid-template-columns: repeat(12, 1fr); }
+  .panel {
+    grid-column: span 12;
+    background: linear-gradient(180deg, var(--surface), var(--bg-2));
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: clamp(18px, 2.4vw, 26px);
+  }
+  .panel.span6 { grid-column: span 12; }
+  @media (min-width: 860px) {
+    .panel.span6 { grid-column: span 6; }
+  }
+
+  .phead {
+    display: flex; align-items: center; gap: 10px;
+    margin: 0 0 14px; padding-bottom: 12px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .phead h2 {
+    margin: 0; font-size: 1.18rem; font-weight: 700; letter-spacing: -0.02em;
+  }
+  .phead .idx {
+    font-family: var(--mono); font-size: 11px; color: var(--accent);
+    border: 1px solid var(--accent-dim); background: var(--accent-dim);
+    padding: 3px 8px; border-radius: 999px; letter-spacing: 0.08em;
+  }
+  .phead .tag { margin-left: auto; font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+
+  .read {
+    color: var(--ink-2); font-size: 0.965rem; line-height: 1.72;
+    max-width: 72ch; text-wrap: pretty; margin: 0 0 4px;
+  }
+  .read:empty { display: none; }
+  .nodata {
+    font-family: var(--mono); font-size: 12.5px; color: var(--muted);
+    background: var(--bg); border: 1px dashed var(--line);
+    border-radius: 10px; padding: 12px 14px;
+  }
+
+  /* ============ stocks tables ============ */
+  .group { margin-top: 18px; }
+  .group:first-of-type { margin-top: 14px; }
+  .group h3 {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted);
+    margin: 0 0 8px;
+  }
+  table.data { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  table.data th, table.data td { padding: 9px 6px; text-align: right; }
+  table.data th {
+    font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+    border-bottom: 1px solid var(--line); text-align: right;
+  }
+  table.data th:first-child, table.data td:first-child { text-align: left; }
+  table.data td { border-bottom: 1px solid var(--line-soft); }
+  table.data tr:last-child td { border-bottom: none; }
+  table.data .nm { color: var(--ink); font-weight: 600; }
+  table.data .sym { font-family: var(--mono); font-size: 11px; color: var(--muted); display: block; }
+  table.data .px { font-family: var(--mono); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .chg {
+    font-family: var(--mono); font-variant-numeric: tabular-nums;
+    font-weight: 600; display: inline-block; min-width: 64px;
+  }
+  .chg.up   { color: var(--up); }
+  .chg.down { color: var(--down); }
+  .chg.flat { color: var(--muted); }
+
+  /* ============ weather timeline (hero) ============ */
+  .wx-loc { margin-top: 22px; }
+  .wx-loc:first-of-type { margin-top: 6px; }
+  .wx-loc__head {
+    display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px;
+  }
+  .wx-loc__head .name { font-size: 1.02rem; font-weight: 700; }
+  .wx-loc__head .range {
+    font-family: var(--mono); font-size: 11.5px; color: var(--muted);
+    margin-left: auto;
+  }
+  .wx-scroll { overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; }
+  .wx-track {
+    display: grid; grid-auto-flow: column;
+    grid-auto-columns: minmax(46px, 1fr);
+    gap: 6px; min-width: 100%;
+    align-items: end;
+  }
+  .wx-track.wide { min-width: max-content; }
+  .hour {
+    display: grid; grid-template-rows: auto 118px auto; gap: 6px;
+    text-align: center; align-items: end;
+    padding: 8px 2px; border-radius: 10px;
+    transition: background 160ms var(--ease);
+  }
+  .hour:hover { background: var(--surface-2); }
+  .hour .t {
+    font-family: var(--mono); font-size: 12.5px; font-weight: 600;
+    color: var(--ink); font-variant-numeric: tabular-nums;
+  }
+  .hour .ico { font-size: 15px; line-height: 1; }
+  .bars { position: relative; height: 118px; display: flex; align-items: end; justify-content: center; }
+  .bar-temp {
+    width: 8px; border-radius: 5px;
+    background: linear-gradient(180deg, var(--accent), oklch(0.62 0.14 55));
+    min-height: 6px;
+    box-shadow: 0 0 12px oklch(0.82 0.15 78 / 0.25);
+  }
+  .bar-rain {
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 26px; border-radius: 5px 5px 0 0;
+    background: oklch(0.74 0.13 235 / 0.20);
+    border-top: 2px solid var(--rain);
+  }
+  .hour .meta {
+    font-family: var(--mono); font-size: 11px; font-variant-numeric: tabular-nums;
+    line-height: 1.45;
+  }
+  .hour .meta .deg { color: var(--ink-2); display: block; }
+  .hour .meta .pp { color: var(--rain); }
+  .hour .meta .pp.dry { color: var(--muted); }
+  .wx-legend {
+    display: flex; gap: 18px; flex-wrap: wrap; margin-top: 4px;
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+  }
+  .wx-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 14px; height: 8px; border-radius: 3px; }
+  .swatch.t { background: linear-gradient(180deg, var(--accent), oklch(0.62 0.14 55)); }
+  .swatch.r { background: var(--rain); }
+
+  /* ============ news ============ */
+  .news-col + .news-col { margin-top: 22px; }
+  .news-col h3 {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted); margin: 0 0 10px;
+  }
+  .feed { list-style: none; margin: 0; padding: 0; counter-reset: n; }
+  .feed li { counter-increment: n; }
+  .feed a {
+    display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: baseline;
+    text-decoration: none; padding: 11px 8px; border-radius: 9px;
+    border-bottom: 1px solid var(--line-soft);
+    transition: background 150ms var(--ease), transform 150ms var(--ease);
+  }
+  .feed li:last-child a { border-bottom: none; }
+  .feed a::before {
+    content: counter(n, decimal-leading-zero);
+    font-family: var(--mono); font-size: 11px; color: var(--accent);
+    padding-top: 2px;
+  }
+  .feed a:hover { background: var(--surface-2); }
+  .feed a:hover .title { color: var(--accent); }
+  .feed .title { color: var(--ink-2); font-size: 0.94rem; line-height: 1.5; }
+
+  /* ============ footer ============ */
+  footer {
+    margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line);
+    font-family: var(--mono); font-size: 11.5px; color: var(--muted);
+    display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
 <body>
-<h1>AI 데일리 브리핑</h1>
-<p>{{ generated_at }}</p>
+<div class="wrap">
 
-<section><h2>시장</h2><p>{{ brief.sections.markets }}</p>
-{% for group, items in raw.stocks.groups.items() if raw.stocks.ok %}
-<h3>{{ group }}</h3><ul>
-{% for it in items %}<li>{{ it.name }}: {{ it.price }} ({{ it.change_pct }}%)</li>{% endfor %}
-</ul>{% endfor %}</section>
+  <header class="masthead">
+    <div>
+      <span class="brandmark"><span class="dot"></span>AI · Daily Briefing</span>
+      <h1>AI <em>데일리</em> 브리핑</h1>
+    </div>
+    <div class="stamp">
+      <b>{{ generated_at }}</b>
+      남양주 · 동탄 · 시장 · 메모리 · 뉴스
+    </div>
+  </header>
 
-<section><h2>메모리</h2><p>{{ brief.sections.memory }}</p></section>
+  <main class="grid">
 
-<section><h2>날씨</h2><p>{{ brief.sections.weather }}</p>
-{% for loc in raw.weather.locations if raw.weather.ok %}
-<h3>{{ loc.name }}</h3><ul>
-{% for h in loc.hourly %}<li>{{ h.time }} — {{ h.temp }}°C, 강수 {{ h.precip_prob }}%</li>{% endfor %}
-</ul>{% endfor %}</section>
+    <!-- ====== 시장 ====== -->
+    <section class="panel">
+      <div class="phead">
+        <span class="idx">01</span>
+        <h2>시장</h2>
+        <span class="tag">증시 · 환율</span>
+      </div>
+      <p class="read">{{ brief.sections.markets }}</p>
 
-<section><h2>뉴스</h2><p>{{ brief.sections.news }}</p>
-<ul>{% for n in raw.news.naver_economy if raw.news.ok %}
-<li><a href="{{ n.link }}">{{ n.title }}</a></li>{% endfor %}</ul></section>
-</body></html>
+      {% if raw.stocks.ok %}
+        {% set _labels = {"us_index": "미국 증시", "semis": "글로벌 반도체", "kr_memory": "한국 메모리"} %}
+        {% for group, items in raw.stocks.groups.items() %}
+        <div class="group">
+          <h3>{{ _labels[group] if group in _labels else group }}</h3>
+          <table class="data">
+            <thead><tr><th>종목</th><th>가격</th><th>등락</th></tr></thead>
+            <tbody>
+              {% for it in items %}
+              <tr>
+                <td>
+                  <span class="nm">{{ it.name }}</span>
+                  <span class="sym">{{ it.symbol }}</span>
+                </td>
+                <td class="px">{{ "{:,.2f}".format(it.price) if it.price is number else it.price }}</td>
+                <td>
+                  {% set c = it.change_pct %}
+                  {% if c is number %}
+                    <span class="chg {{ 'up' if c > 0 else ('down' if c < 0 else 'flat') }}">{{ "%+.2f"|format(c) }}%</span>
+                  {% else %}
+                    <span class="chg flat">{{ c }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="nodata">증시 데이터 없음</div>
+      {% endif %}
+
+      {% if raw.fx.ok %}
+      <div class="group">
+        <h3>환율</h3>
+        <table class="data">
+          <thead><tr><th>통화쌍</th><th>환율</th><th>등락</th></tr></thead>
+          <tbody>
+            {% for r in raw.fx.rates %}
+            <tr>
+              <td>
+                <span class="nm">{{ r.name }}</span>
+                <span class="sym">{{ r.pair }}</span>
+              </td>
+              <td class="px">{{ "{:,.2f}".format(r.price) if r.price is number else r.price }}</td>
+              <td>
+                {% set c = r.change_pct %}
+                {% if c is number %}
+                  <span class="chg {{ 'up' if c > 0 else ('down' if c < 0 else 'flat') }}">{{ "%+.2f"|format(c) }}%</span>
+                {% else %}
+                  <span class="chg flat">{{ c }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="group"><h3>환율</h3><div class="nodata">환율 데이터 없음</div></div>
+      {% endif %}
+    </section>
+
+    <!-- ====== 메모리 분석 ====== -->
+    <section class="panel span6">
+      <div class="phead">
+        <span class="idx">02</span>
+        <h2>메모리 분석</h2>
+        <span class="tag">HBM · DRAM · NAND</span>
+      </div>
+      {% if brief.sections.memory %}
+        <p class="read">{{ brief.sections.memory }}</p>
+      {% else %}
+        <div class="nodata">메모리 분석 없음</div>
+      {% endif %}
+    </section>
+
+    <!-- ====== 뉴스 ====== -->
+    <section class="panel span6">
+      <div class="phead">
+        <span class="idx">04</span>
+        <h2>뉴스</h2>
+        <span class="tag">경제 · 반도체</span>
+      </div>
+      <p class="read">{{ brief.sections.news }}</p>
+      {% if raw.news.ok %}
+        <div class="news-col">
+          <h3>네이버 경제뉴스</h3>
+          {% if raw.news.naver_economy %}
+          <ol class="feed">
+            {% for n in raw.news.naver_economy %}
+            <li><a href="{{ n.link }}" target="_blank" rel="noopener"><span class="title">{{ n.title }}</span></a></li>
+            {% endfor %}
+          </ol>
+          {% else %}<div class="nodata">기사 없음</div>{% endif %}
+        </div>
+        <div class="news-col">
+          <h3>글로벌 반도체</h3>
+          {% if raw.news.global_semi %}
+          <ol class="feed">
+            {% for n in raw.news.global_semi %}
+            <li><a href="{{ n.link }}" target="_blank" rel="noopener"><span class="title">{{ n.title }}</span></a></li>
+            {% endfor %}
+          </ol>
+          {% else %}<div class="nodata">기사 없음</div>{% endif %}
+        </div>
+      {% else %}
+        <div class="nodata">뉴스 데이터 없음</div>
+      {% endif %}
+    </section>
+
+    <!-- ====== 날씨 타임라인 (hero) ====== -->
+    <section class="panel">
+      <div class="phead">
+        <span class="idx">03</span>
+        <h2>날씨 타임라인</h2>
+        <span class="tag">시간대별 · 1시간 단위</span>
+      </div>
+      <p class="read">{{ brief.sections.weather }}</p>
+
+      {% if raw.weather.ok %}
+        {% set _wmo = {
+          0:"☀", 1:"🌤", 2:"⛅", 3:"☁",
+          45:"🌫", 48:"🌫",
+          51:"🌦", 53:"🌦", 55:"🌧", 56:"🌧", 57:"🌧",
+          61:"🌦", 63:"🌧", 65:"🌧", 66:"🌧", 67:"🌧",
+          71:"🌨", 73:"🌨", 75:"❄", 77:"❄",
+          80:"🌦", 81:"🌧", 82:"⛈", 85:"🌨", 86:"❄",
+          95:"⛈", 96:"⛈", 99:"⛈"
+        } %}
+        {% for loc in raw.weather.locations %}
+          {% set temps = loc.hourly | map(attribute='temp') | select('number') | list %}
+          {% set tmin = temps | min if temps else 0 %}
+          {% set tmax = temps | max if temps else 1 %}
+          {% set tspan = (tmax - tmin) if (tmax - tmin) > 0 else 1 %}
+          <div class="wx-loc">
+            <div class="wx-loc__head">
+              <span class="name">{{ loc.name }}</span>
+              {% if temps %}
+              <span class="range">최저 {{ "%.0f"|format(tmin) }}° · 최고 {{ "%.0f"|format(tmax) }}°</span>
+              {% endif %}
+            </div>
+            <div class="wx-scroll">
+              <div class="wx-track {{ 'wide' if loc.hourly|length > 14 }}">
+                {% for h in loc.hourly %}
+                  {% set tp = h.temp if h.temp is number else tmin %}
+                  {% set hpct = 18 + ((tp - tmin) / tspan * 82) %}
+                  {% set pp = h.precip_prob if h.precip_prob is number else 0 %}
+                  <div class="hour" title="{{ loc.name }} {{ h.time }} · {{ tp }}°C · 강수 {{ pp }}%">
+                    <span class="t">{{ h.time }}</span>
+                    <div class="bars">
+                      {% if pp > 0 %}
+                      <span class="bar-rain" style="height: {{ (pp * 0.9 + 8) | round }}px"></span>
+                      {% endif %}
+                      <span class="bar-temp" style="height: {{ hpct | round }}%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">{{ _wmo[h.code] if h.code in _wmo else "•" }}</span>
+                      <span class="deg">{{ "%.0f"|format(tp) }}°</span>
+                      <span class="pp {{ 'dry' if pp == 0 }}">☔{{ pp }}%</span>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+        <div class="wx-legend">
+          <span><span class="swatch t"></span>기온</span>
+          <span><span class="swatch r"></span>강수확률</span>
+          <span>← 좌우 스크롤 / 막대 위에 커서 ↑</span>
+        </div>
+      {% else %}
+        <div class="nodata">날씨 데이터 없음</div>
+      {% endif %}
+    </section>
+
+  </main>
+
+  <footer>
+    <span>AI 데일리 브리핑 · 자동 생성 리포트</span>
+    <span>{{ generated_at }}</span>
+  </footer>
+
+</div>
+</body>
+</html>

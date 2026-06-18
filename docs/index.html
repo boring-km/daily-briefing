@@ -1,0 +1,1116 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>AI 데일리 브리핑 — 2026-06-19 07:00 KST</title>
+<style>
+  /* ============ tokens ============ */
+  :root {
+    /* deep observatory ink, faint cool-blue tint */
+    --bg:        oklch(0.17 0.018 255);
+    --bg-2:      oklch(0.21 0.020 255);
+    --surface:   oklch(0.235 0.021 255);
+    --surface-2: oklch(0.275 0.022 255);
+    --line:      oklch(0.34 0.018 255);
+    --line-soft: oklch(0.30 0.016 255 / 0.6);
+
+    --ink:       oklch(0.96 0.006 255);
+    --ink-2:     oklch(0.80 0.012 255);
+    --muted:     oklch(0.66 0.014 255);
+
+    /* morning-sun accent (the briefing identity) */
+    --accent:    oklch(0.82 0.15 78);
+    --accent-dim: oklch(0.82 0.15 78 / 0.14);
+
+    --up:        oklch(0.78 0.16 152);
+    --down:      oklch(0.70 0.18 23);
+    --rain:      oklch(0.74 0.13 235);
+
+    --radius: 14px;
+    --gap: clamp(14px, 2.4vw, 24px);
+    --maxw: 1120px;
+    --mono: "SF Mono", "JetBrains Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+    --sans: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+            "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1200px 520px at 78% -8%, oklch(0.30 0.06 78 / 0.22), transparent 60%),
+      radial-gradient(900px 600px at -5% 0%, oklch(0.30 0.05 255 / 0.25), transparent 55%),
+      var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    letter-spacing: -0.005em;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: clamp(20px, 4vw, 44px) clamp(16px, 4vw, 36px) 72px; }
+
+  /* ============ masthead ============ */
+  .masthead {
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px 20px;
+    padding-bottom: 22px; margin-bottom: 30px;
+    border-bottom: 1px solid var(--line);
+  }
+  .brandmark {
+    display: inline-flex; align-items: center; gap: 11px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--accent);
+  }
+  .brandmark .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-dim), 0 0 16px 2px oklch(0.82 0.15 78 / 0.4);
+  }
+  .masthead h1 {
+    margin: 8px 0 0; font-size: clamp(1.9rem, 5.4vw, 3.1rem);
+    font-weight: 760; line-height: 1.02; letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+  .masthead h1 em { font-style: normal; color: var(--accent); }
+  .stamp {
+    margin-left: auto; text-align: right; font-family: var(--mono);
+    font-size: 12.5px; color: var(--muted); line-height: 1.5;
+  }
+  .stamp b { display: block; color: var(--ink-2); font-weight: 600; font-size: 13.5px; }
+
+  /* ============ layout ============ */
+  .grid { display: grid; gap: var(--gap); grid-template-columns: repeat(12, 1fr); }
+  .panel {
+    grid-column: span 12;
+    background: linear-gradient(180deg, var(--surface), var(--bg-2));
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: clamp(18px, 2.4vw, 26px);
+  }
+  .panel.span6 { grid-column: span 12; }
+  @media (min-width: 860px) {
+    .panel.span6 { grid-column: span 6; }
+  }
+
+  .phead {
+    display: flex; align-items: center; gap: 10px;
+    margin: 0 0 14px; padding-bottom: 12px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .phead h2 {
+    margin: 0; font-size: 1.18rem; font-weight: 700; letter-spacing: -0.02em;
+  }
+  .phead .idx {
+    font-family: var(--mono); font-size: 11px; color: var(--accent);
+    border: 1px solid var(--accent-dim); background: var(--accent-dim);
+    padding: 3px 8px; border-radius: 999px; letter-spacing: 0.08em;
+  }
+  .phead .tag { margin-left: auto; font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+
+  .read {
+    color: var(--ink-2); font-size: 0.965rem; line-height: 1.72;
+    max-width: 72ch; text-wrap: pretty; margin: 0 0 4px;
+  }
+  .read:empty { display: none; }
+  .nodata {
+    font-family: var(--mono); font-size: 12.5px; color: var(--muted);
+    background: var(--bg); border: 1px dashed var(--line);
+    border-radius: 10px; padding: 12px 14px;
+  }
+
+  /* ============ stocks tables ============ */
+  .group { margin-top: 18px; }
+  .group:first-of-type { margin-top: 14px; }
+  .group h3 {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted);
+    margin: 0 0 8px;
+  }
+  table.data { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  table.data th, table.data td { padding: 9px 6px; text-align: right; }
+  table.data th {
+    font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+    border-bottom: 1px solid var(--line); text-align: right;
+  }
+  table.data th:first-child, table.data td:first-child { text-align: left; }
+  table.data td { border-bottom: 1px solid var(--line-soft); }
+  table.data tr:last-child td { border-bottom: none; }
+  table.data .nm { color: var(--ink); font-weight: 600; }
+  table.data .sym { font-family: var(--mono); font-size: 11px; color: var(--muted); display: block; }
+  table.data .px { font-family: var(--mono); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .chg {
+    font-family: var(--mono); font-variant-numeric: tabular-nums;
+    font-weight: 600; display: inline-block; min-width: 64px;
+  }
+  .chg.up   { color: var(--up); }
+  .chg.down { color: var(--down); }
+  .chg.flat { color: var(--muted); }
+
+  /* ============ weather timeline (hero) ============ */
+  .wx-loc { margin-top: 22px; }
+  .wx-loc:first-of-type { margin-top: 6px; }
+  .wx-loc__head {
+    display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px;
+  }
+  .wx-loc__head .name { font-size: 1.02rem; font-weight: 700; }
+  .wx-loc__head .range {
+    font-family: var(--mono); font-size: 11.5px; color: var(--muted);
+    margin-left: auto;
+  }
+  .wx-scroll { overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; }
+  .wx-track {
+    display: grid; grid-auto-flow: column;
+    grid-auto-columns: minmax(46px, 1fr);
+    gap: 6px; min-width: 100%;
+    align-items: end;
+  }
+  .wx-track.wide { min-width: max-content; }
+  .hour {
+    display: grid; grid-template-rows: auto 118px auto; gap: 6px;
+    text-align: center; align-items: end;
+    padding: 8px 2px; border-radius: 10px;
+    transition: background 160ms var(--ease);
+  }
+  .hour:hover { background: var(--surface-2); }
+  .hour .t {
+    font-family: var(--mono); font-size: 12.5px; font-weight: 600;
+    color: var(--ink); font-variant-numeric: tabular-nums;
+  }
+  .hour .ico { font-size: 15px; line-height: 1; }
+  .bars { position: relative; height: 118px; display: flex; align-items: end; justify-content: center; }
+  .bar-temp {
+    width: 8px; border-radius: 5px;
+    background: linear-gradient(180deg, var(--accent), oklch(0.62 0.14 55));
+    min-height: 6px;
+    box-shadow: 0 0 12px oklch(0.82 0.15 78 / 0.25);
+  }
+  .bar-rain {
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 26px; border-radius: 5px 5px 0 0;
+    background: oklch(0.74 0.13 235 / 0.20);
+    border-top: 2px solid var(--rain);
+  }
+  .hour .meta {
+    font-family: var(--mono); font-size: 11px; font-variant-numeric: tabular-nums;
+    line-height: 1.45;
+  }
+  .hour .meta .deg { color: var(--ink-2); display: block; }
+  .hour .meta .pp { color: var(--rain); }
+  .hour .meta .pp.dry { color: var(--muted); }
+  .wx-legend {
+    display: flex; gap: 18px; flex-wrap: wrap; margin-top: 4px;
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+  }
+  .wx-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 14px; height: 8px; border-radius: 3px; }
+  .swatch.t { background: linear-gradient(180deg, var(--accent), oklch(0.62 0.14 55)); }
+  .swatch.r { background: var(--rain); }
+
+  /* ============ news ============ */
+  .news-col + .news-col { margin-top: 22px; }
+  .news-col h3 {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted); margin: 0 0 10px;
+  }
+  .feed { list-style: none; margin: 0; padding: 0; counter-reset: n; }
+  .feed li { counter-increment: n; }
+  .feed a {
+    display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: baseline;
+    text-decoration: none; padding: 11px 8px; border-radius: 9px;
+    border-bottom: 1px solid var(--line-soft);
+    transition: background 150ms var(--ease), transform 150ms var(--ease);
+  }
+  .feed li:last-child a { border-bottom: none; }
+  .feed a::before {
+    content: counter(n, decimal-leading-zero);
+    font-family: var(--mono); font-size: 11px; color: var(--accent);
+    padding-top: 2px;
+  }
+  .feed a:hover { background: var(--surface-2); }
+  .feed a:hover .title { color: var(--accent); }
+  .feed .title { color: var(--ink-2); font-size: 0.94rem; line-height: 1.5; }
+
+  /* ============ footer ============ */
+  footer {
+    margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line);
+    font-family: var(--mono); font-size: 11.5px; color: var(--muted);
+    display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div>
+      <span class="brandmark"><span class="dot"></span>AI · Daily Briefing</span>
+      <h1>AI <em>데일리</em> 브리핑</h1>
+    </div>
+    <div class="stamp">
+      <b>2026-06-19 07:00 KST</b>
+      남양주 · 동탄 · 시장 · 메모리 · 뉴스
+    </div>
+  </header>
+
+  <main class="grid">
+
+    <!-- ====== 시장 ====== -->
+    <section class="panel">
+      <div class="phead">
+        <span class="idx">01</span>
+        <h2>시장</h2>
+        <span class="tag">증시 · 환율</span>
+      </div>
+      <p class="read">미국 증시는 혼조세로 마감했으며 반도체 업종이 강세를 보였습니다. 엔비디아 급등에 힘입어 한국 메모리 관련주도 동반 상승했습니다. 원달러 환율은 소폭 상승했습니다.</p>
+
+      
+        
+        
+        <div class="group">
+          <h3>미국 증시</h3>
+          <table class="data">
+            <thead><tr><th>종목</th><th>가격</th><th>등락</th></tr></thead>
+            <tbody>
+              
+              <tr>
+                <td>
+                  <span class="nm">S&amp;P 500</span>
+                  <span class="sym">^GSPC</span>
+                </td>
+                <td class="px">5,235.48</td>
+                <td>
+                  
+                  
+                    <span class="chg down">-1.24%</span>
+                  
+                </td>
+              </tr>
+              
+              <tr>
+                <td>
+                  <span class="nm">나스닥</span>
+                  <span class="sym">^IXIC</span>
+                </td>
+                <td class="px">16,920.70</td>
+                <td>
+                  
+                  
+                    <span class="chg up">+0.83%</span>
+                  
+                </td>
+              </tr>
+              
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="group">
+          <h3>글로벌 반도체</h3>
+          <table class="data">
+            <thead><tr><th>종목</th><th>가격</th><th>등락</th></tr></thead>
+            <tbody>
+              
+              <tr>
+                <td>
+                  <span class="nm">엔비디아</span>
+                  <span class="sym">NVDA</span>
+                </td>
+                <td class="px">124.30</td>
+                <td>
+                  
+                  
+                    <span class="chg up">+3.41%</span>
+                  
+                </td>
+              </tr>
+              
+              <tr>
+                <td>
+                  <span class="nm">TSMC</span>
+                  <span class="sym">TSM</span>
+                </td>
+                <td class="px">178.90</td>
+                <td>
+                  
+                  
+                    <span class="chg down">-0.60%</span>
+                  
+                </td>
+              </tr>
+              
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="group">
+          <h3>한국 메모리</h3>
+          <table class="data">
+            <thead><tr><th>종목</th><th>가격</th><th>등락</th></tr></thead>
+            <tbody>
+              
+              <tr>
+                <td>
+                  <span class="nm">삼성전자</span>
+                  <span class="sym">005930.KS</span>
+                </td>
+                <td class="px">78,600.00</td>
+                <td>
+                  
+                  
+                    <span class="chg flat">+0.00%</span>
+                  
+                </td>
+              </tr>
+              
+              <tr>
+                <td>
+                  <span class="nm">SK하이닉스</span>
+                  <span class="sym">000660.KS</span>
+                </td>
+                <td class="px">201,500.00</td>
+                <td>
+                  
+                  
+                    <span class="chg up">+2.18%</span>
+                  
+                </td>
+              </tr>
+              
+            </tbody>
+          </table>
+        </div>
+        
+      
+
+      
+      <div class="group">
+        <h3>환율</h3>
+        <table class="data">
+          <thead><tr><th>통화쌍</th><th>환율</th><th>등락</th></tr></thead>
+          <tbody>
+            
+            <tr>
+              <td>
+                <span class="nm">달러/원</span>
+                <span class="sym">USD/KRW</span>
+              </td>
+              <td class="px">1,382.50</td>
+              <td>
+                
+                
+                  <span class="chg up">+0.42%</span>
+                
+              </td>
+            </tr>
+            
+            <tr>
+              <td>
+                <span class="nm">엔/원</span>
+                <span class="sym">JPY/KRW</span>
+              </td>
+              <td class="px">8.91</td>
+              <td>
+                
+                
+                  <span class="chg down">-0.15%</span>
+                
+              </td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+      
+    </section>
+
+    <!-- ====== 메모리 분석 ====== -->
+    <section class="panel span6">
+      <div class="phead">
+        <span class="idx">02</span>
+        <h2>메모리 분석</h2>
+        <span class="tag">HBM · DRAM · NAND</span>
+      </div>
+      
+        <p class="read">HBM 수요는 견조하며 SK하이닉스가 수혜를 받고 있습니다. DRAM 현물가는 안정세, NAND는 회복 초입 구간입니다.</p>
+      
+    </section>
+
+    <!-- ====== 뉴스 ====== -->
+    <section class="panel span6">
+      <div class="phead">
+        <span class="idx">04</span>
+        <h2>뉴스</h2>
+        <span class="tag">경제 · 반도체</span>
+      </div>
+      <p class="read">외국인 순매수 전환과 반도체 강세가 두드러집니다. 글로벌 반도체는 HBM4와 TSMC 증설 뉴스가 핵심입니다.</p>
+      
+        <div class="news-col">
+          <h3>네이버 경제뉴스</h3>
+          
+          <ol class="feed">
+            
+            <li><a href="http://n1" target="_blank" rel="noopener"><span class="title">코스피 외국인 순매수 전환, 반도체 강세</span></a></li>
+            
+            <li><a href="http://n2" target="_blank" rel="noopener"><span class="title">원달러 환율 1380원대 등락</span></a></li>
+            
+          </ol>
+          
+        </div>
+        <div class="news-col">
+          <h3>글로벌 반도체</h3>
+          
+          <ol class="feed">
+            
+            <li><a href="http://g1" target="_blank" rel="noopener"><span class="title">NVIDIA HBM4 supply ramp accelerates</span></a></li>
+            
+            <li><a href="http://g2" target="_blank" rel="noopener"><span class="title">TSMC raises 2026 capex guidance</span></a></li>
+            
+          </ol>
+          
+        </div>
+      
+    </section>
+
+    <!-- ====== 날씨 타임라인 (hero) ====== -->
+    <section class="panel">
+      <div class="phead">
+        <span class="idx">03</span>
+        <h2>날씨 타임라인</h2>
+        <span class="tag">시간대별 · 1시간 단위</span>
+      </div>
+      <p class="read">남양주와 동탄 모두 오전은 맑으나 오후에 비 소식이 있습니다. 우산을 챙기시고 출퇴근 시간대 강수에 유의하세요.</p>
+
+      
+        
+        
+          
+          
+          
+          
+          <div class="wx-loc">
+            <div class="wx-loc__head">
+              <span class="name">남양주시</span>
+              
+              <span class="range">최저 18° · 최고 32°</span>
+              
+            </div>
+            <div class="wx-scroll">
+              <div class="wx-track wide">
+                
+                  
+                  
+                  
+                  <div class="hour" title="남양주시 06:00 · 18.0°C · 강수 10%">
+                    <span class="t">06:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 17.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 18.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">☀</span>
+                      <span class="deg">18°</span>
+                      <span class="pp ">☔10%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="남양주시 07:00 · 18.9°C · 강수 10%">
+                    <span class="t">07:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 17.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 23.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">☀</span>
+                      <span class="deg">19°</span>
+                      <span class="pp ">☔10%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="남양주시 08:00 · 19.8°C · 강수 10%">
+                    <span class="t">08:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 17.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 29.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">☀</span>
+                      <span class="deg">20°</span>
+                      <span class="pp ">☔10%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="남양주시 09:00 · 20.7°C · 강수 10%">
+                    <span class="t">09:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 17.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 34.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">☀</span>
+                      <span class="deg">21°</span>
+                      <span class="pp ">☔10%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="남양주시 10:00 · 21.6°C · 강수 60%">
+                    <span class="t">10:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 62.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 40.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">🌦</span>
+                      <span class="deg">22°</span>
+                      <span class="pp ">☔60%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="남양주시 11:00 · 22.5°C · 강수 60%">
+                    <span class="t">11:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 62.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 45.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">🌦</span>
+                      <span class="deg">22°</span>
+                      <span class="pp ">☔60%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="남양주시 12:00 · 23.4°C · 강수 60%">
+                    <span class="t">12:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 62.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 51.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">🌦</span>
+                      <span class="deg">23°</span>
+                      <span class="pp ">☔60%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="남양주시 13:00 · 24.3°C · 강수 60%">
+                    <span class="t">13:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 62.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 56.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">🌦</span>
+                      <span class="deg">24°</span>
+                      <span class="pp ">☔60%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="남양주시 14:00 · 25.2°C · 강수 20%">
+                    <span class="t">14:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 26.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 62.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">☁</span>
+                      <span class="deg">25°</span>
+                      <span class="pp ">☔20%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="남양주시 15:00 · 26.1°C · 강수 20%">
+                    <span class="t">15:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 26.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 67.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">☁</span>
+                      <span class="deg">26°</span>
+                      <span class="pp ">☔20%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="남양주시 16:00 · 27.0°C · 강수 20%">
+                    <span class="t">16:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 26.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 73.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">☁</span>
+                      <span class="deg">27°</span>
+                      <span class="pp ">☔20%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="남양주시 17:00 · 27.9°C · 강수 20%">
+                    <span class="t">17:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 26.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 78.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">☁</span>
+                      <span class="deg">28°</span>
+                      <span class="pp ">☔20%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="남양주시 18:00 · 28.8°C · 강수 20%">
+                    <span class="t">18:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 26.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 84.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">☁</span>
+                      <span class="deg">29°</span>
+                      <span class="pp ">☔20%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="남양주시 19:00 · 29.700000000000003°C · 강수 20%">
+                    <span class="t">19:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 26.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 89.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">☁</span>
+                      <span class="deg">30°</span>
+                      <span class="pp ">☔20%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="남양주시 20:00 · 30.6°C · 강수 20%">
+                    <span class="t">20:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 26.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 95.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">☁</span>
+                      <span class="deg">31°</span>
+                      <span class="pp ">☔20%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="남양주시 21:00 · 31.5°C · 강수 20%">
+                    <span class="t">21:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 26.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 100.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">☁</span>
+                      <span class="deg">32°</span>
+                      <span class="pp ">☔20%</span>
+                    </div>
+                  </div>
+                
+              </div>
+            </div>
+          </div>
+        
+          
+          
+          
+          
+          <div class="wx-loc">
+            <div class="wx-loc__head">
+              <span class="name">동탄</span>
+              
+              <span class="range">최저 19° · 최고 31°</span>
+              
+            </div>
+            <div class="wx-scroll">
+              <div class="wx-track wide">
+                
+                  
+                  
+                  
+                  <div class="hour" title="동탄 06:00 · 19.0°C · 강수 0%">
+                    <span class="t">06:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-temp" style="height: 18.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">🌤</span>
+                      <span class="deg">19°</span>
+                      <span class="pp dry">☔0%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="동탄 07:00 · 19.8°C · 강수 0%">
+                    <span class="t">07:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-temp" style="height: 23.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">🌤</span>
+                      <span class="deg">20°</span>
+                      <span class="pp dry">☔0%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="동탄 08:00 · 20.6°C · 강수 0%">
+                    <span class="t">08:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-temp" style="height: 29.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">🌤</span>
+                      <span class="deg">21°</span>
+                      <span class="pp dry">☔0%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="동탄 09:00 · 21.4°C · 강수 0%">
+                    <span class="t">09:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-temp" style="height: 34.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">🌤</span>
+                      <span class="deg">21°</span>
+                      <span class="pp dry">☔0%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="동탄 10:00 · 22.2°C · 강수 0%">
+                    <span class="t">10:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-temp" style="height: 40.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">🌤</span>
+                      <span class="deg">22°</span>
+                      <span class="pp dry">☔0%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="동탄 11:00 · 23.0°C · 강수 40%">
+                    <span class="t">11:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 44.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 45.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">🌦</span>
+                      <span class="deg">23°</span>
+                      <span class="pp ">☔40%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="동탄 12:00 · 23.8°C · 강수 40%">
+                    <span class="t">12:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 44.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 51.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">🌦</span>
+                      <span class="deg">24°</span>
+                      <span class="pp ">☔40%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="동탄 13:00 · 24.6°C · 강수 40%">
+                    <span class="t">13:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 44.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 56.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">🌦</span>
+                      <span class="deg">25°</span>
+                      <span class="pp ">☔40%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="동탄 14:00 · 25.4°C · 강수 40%">
+                    <span class="t">14:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 44.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 62.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">🌦</span>
+                      <span class="deg">25°</span>
+                      <span class="pp ">☔40%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="동탄 15:00 · 26.2°C · 강수 5%">
+                    <span class="t">15:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 12.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 67.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">⛅</span>
+                      <span class="deg">26°</span>
+                      <span class="pp ">☔5%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="동탄 16:00 · 27.0°C · 강수 5%">
+                    <span class="t">16:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 12.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 73.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">⛅</span>
+                      <span class="deg">27°</span>
+                      <span class="pp ">☔5%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="동탄 17:00 · 27.8°C · 강수 5%">
+                    <span class="t">17:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 12.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 78.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">⛅</span>
+                      <span class="deg">28°</span>
+                      <span class="pp ">☔5%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="동탄 18:00 · 28.6°C · 강수 5%">
+                    <span class="t">18:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 12.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 84.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">⛅</span>
+                      <span class="deg">29°</span>
+                      <span class="pp ">☔5%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="동탄 19:00 · 29.4°C · 강수 5%">
+                    <span class="t">19:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 12.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 89.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">⛅</span>
+                      <span class="deg">29°</span>
+                      <span class="pp ">☔5%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="동탄 20:00 · 30.200000000000003°C · 강수 5%">
+                    <span class="t">20:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 12.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 95.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">⛅</span>
+                      <span class="deg">30°</span>
+                      <span class="pp ">☔5%</span>
+                    </div>
+                  </div>
+                
+                  
+                  
+                  
+                  <div class="hour" title="동탄 21:00 · 31.0°C · 강수 5%">
+                    <span class="t">21:00</span>
+                    <div class="bars">
+                      
+                      <span class="bar-rain" style="height: 12.0px"></span>
+                      
+                      <span class="bar-temp" style="height: 100.0%"></span>
+                    </div>
+                    <div class="meta">
+                      <span class="ico">⛅</span>
+                      <span class="deg">31°</span>
+                      <span class="pp ">☔5%</span>
+                    </div>
+                  </div>
+                
+              </div>
+            </div>
+          </div>
+        
+        <div class="wx-legend">
+          <span><span class="swatch t"></span>기온</span>
+          <span><span class="swatch r"></span>강수확률</span>
+          <span>← 좌우 스크롤 / 막대 위에 커서 ↑</span>
+        </div>
+      
+    </section>
+
+  </main>
+
+  <footer>
+    <span>AI 데일리 브리핑 · 자동 생성 리포트</span>
+    <span>2026-06-19 07:00 KST</span>
+  </footer>
+
+</div>
+</body>
+</html>
