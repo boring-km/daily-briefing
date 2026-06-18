@@ -15,6 +15,6 @@ def render_web(raw: dict, brief: dict, generated_at: str) -> str:
         raw=raw, brief=brief, generated_at=generated_at)
 
 
-def render_email(brief: dict, web_url: str, generated_at: str) -> str:
+def render_email(brief: dict, raw: dict, web_url: str, generated_at: str) -> str:
     return _env.get_template("email.html.j2").render(
-        brief=brief, web_url=web_url, generated_at=generated_at)
+        brief=brief, raw=raw, web_url=web_url, generated_at=generated_at)

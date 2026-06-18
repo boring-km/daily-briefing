@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark light">
-<title>AI 데일리 브리핑 요약</title>
+<title>AI 데일리 브리핑</title>
 </head>
 <body style="margin:0;padding:0;background-color:#15171f;font-family:-apple-system,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',Arial,sans-serif;">
   <!-- preheader (hidden) -->
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#15171f;font-size:1px;line-height:1px;">
-    오늘의 시장 · 메모리 · 날씨 · 뉴스 핵심 요약
+    오늘의 시장 · 메모리 · 날씨 · 뉴스 핵심 브리핑
   </div>
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#15171f;">
@@ -21,41 +21,102 @@
           <!-- header -->
           <tr>
             <td style="padding:30px 34px 22px 34px;border-bottom:1px solid #353a48;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:#f0b64a;padding-bottom:10px;">
-                    ● &nbsp;AI · DAILY BRIEFING
-                  </td>
-                </tr>
-                <tr>
-                  <td style="font-size:26px;line-height:1.15;font-weight:700;color:#f4f5f8;letter-spacing:-0.5px;">
-                    AI <span style="color:#f0b64a;">데일리</span> 브리핑
-                  </td>
-                </tr>
-                <tr>
-                  <td style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:12px;color:#9aa0b0;padding-top:8px;">
-                    {{ generated_at }}
-                  </td>
-                </tr>
-              </table>
+              <div style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:#f0b64a;padding-bottom:10px;">
+                ● &nbsp;AI · DAILY BRIEFING
+              </div>
+              <div style="font-size:26px;line-height:1.15;font-weight:700;color:#f4f5f8;letter-spacing:-0.5px;">
+                AI <span style="color:#f0b64a;">데일리</span> 브리핑
+              </div>
+              <div style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:12px;color:#9aa0b0;padding-top:8px;">
+                {{ generated_at }}
+              </div>
             </td>
           </tr>
 
           <!-- summary -->
           <tr>
-            <td style="padding:26px 34px 8px 34px;">
+            <td style="padding:24px 34px 6px 34px;">
               <div style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#9aa0b0;padding-bottom:12px;">
                 핵심요약
               </div>
-              <div style="font-size:16px;line-height:1.72;color:#d4d7e0;">
+              <div style="font-size:16px;line-height:1.72;color:#e4e6ee;font-weight:500;">
                 {{ brief.summary }}
               </div>
             </td>
           </tr>
 
+          {# ── 주요 지표 스냅샷 ── #}
+          {% set posc = "#5fd08a" %}{% set negc = "#f2897f" %}
+          {% if raw.stocks.ok or raw.fx.ok %}
+          <tr>
+            <td style="padding:22px 34px 4px 34px;">
+              <div style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#9aa0b0;padding-bottom:12px;">
+                주요 지표
+              </div>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+                {% set rows = [] %}
+                {% if raw.stocks.ok %}
+                  {% for it in raw.stocks.groups.get('us_index', []) %}{% set _ = rows.append(it) %}{% endfor %}
+                  {% for it in raw.stocks.groups.get('kr_memory', []) %}{% set _ = rows.append(it) %}{% endfor %}
+                {% endif %}
+                {% if raw.fx.ok %}
+                  {% for r in raw.fx.rates %}{% set _ = rows.append({'name': r.name, 'price': r.price, 'change_pct': r.change_pct}) %}{% endfor %}
+                {% endif %}
+                {% for it in rows %}
+                <tr>
+                  <td style="padding:7px 0;border-bottom:1px solid #2c303c;font-size:14px;color:#c4c8d4;">{{ it.name }}</td>
+                  <td align="right" style="padding:7px 0;border-bottom:1px solid #2c303c;font-size:14px;color:#e4e6ee;font-family:'SF Mono',Menlo,Consolas,monospace;">
+                    {{ "{:,.2f}".format(it.price) if it.price is number else it.price }}
+                  </td>
+                  <td align="right" style="padding:7px 0 7px 14px;border-bottom:1px solid #2c303c;font-size:14px;font-family:'SF Mono',Menlo,Consolas,monospace;color:{{ posc if (it.change_pct is number and it.change_pct >= 0) else negc }};">
+                    {{ "%+.2f"|format(it.change_pct) ~ "%" if it.change_pct is number else "-" }}
+                  </td>
+                </tr>
+                {% endfor %}
+              </table>
+            </td>
+          </tr>
+          {% endif %}
+
+          {# ── 섹션별 분석 ── #}
+          {% set _labels = {"markets": "시장", "memory": "메모리", "weather": "날씨", "news": "뉴스"} %}
+          {% for key in ["markets", "memory", "weather", "news"] %}
+            {% set body = brief.sections[key] %}
+            {% if body %}
+            <tr>
+              <td style="padding:20px 34px 0 34px;">
+                <div style="border-top:1px solid #2c303c;padding-top:18px;">
+                  <div style="font-size:14px;font-weight:700;color:#f0b64a;letter-spacing:0.3px;padding-bottom:8px;">
+                    {{ _labels[key] }}
+                  </div>
+                  <div style="font-size:14.5px;line-height:1.74;color:#cfd3de;white-space:pre-line;">{{ body }}</div>
+                </div>
+              </td>
+            </tr>
+            {% endif %}
+          {% endfor %}
+
+          {# ── 뉴스 헤드라인 ── #}
+          {% if raw.news.ok %}
+          <tr>
+            <td style="padding:20px 34px 0 34px;">
+              <div style="border-top:1px solid #2c303c;padding-top:18px;">
+                <div style="font-size:14px;font-weight:700;color:#f0b64a;letter-spacing:0.3px;padding-bottom:10px;">
+                  주요 뉴스
+                </div>
+                {% for n in (raw.news.get('naver_economy', [])[:3] + raw.news.get('market_news', [])[:2] + raw.news.get('global_semi', [])[:2]) %}
+                <div style="padding:5px 0;font-size:13.5px;line-height:1.5;">
+                  <a href="{{ n.link }}" target="_blank" rel="noopener" style="color:#bcd2ff;text-decoration:none;">› {{ n.title }}</a>
+                </div>
+                {% endfor %}
+              </div>
+            </td>
+          </tr>
+          {% endif %}
+
           <!-- CTA -->
           <tr>
-            <td style="padding:24px 34px 34px 34px;">
+            <td style="padding:26px 34px 34px 34px;">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td align="center" bgcolor="#f0b64a" style="border-radius:10px;">
@@ -67,7 +128,7 @@
                 </tr>
               </table>
               <div style="font-size:12px;line-height:1.6;color:#7f8597;padding-top:14px;">
-                시장 · 메모리 · 시간대별 날씨 · 뉴스 전문은 웹 리포트에서 확인하세요.
+                시간대별 날씨 타임라인 · 전체 종목 · 전체 뉴스는 웹 리포트에서 확인하세요.
               </div>
             </td>
           </tr>

@@ -29,7 +29,7 @@ def run(dry_run: bool = False) -> dict:
 
     web_url = config.SETTINGS["pages_base_url"].rstrip("/") + "/"
     web_html = render.render_web(raw, b, generated_at)
-    email_html = render.render_email(b, web_url, generated_at)
+    email_html = render.render_email(b, raw, web_url, generated_at)
 
     os.makedirs(os.path.join(DOCS_DIR, "archive"), exist_ok=True)
     web_path = os.path.join(DOCS_DIR, "index.html")
