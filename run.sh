@@ -2,6 +2,10 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# launchd는 최소 PATH(/usr/bin:/bin:...)로 실행 → claude, homebrew git 못 찾음.
+# 스케줄 실행 시 claude 미발견 → 분석 폴백되는 문제 방지.
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:$PATH"
+
 # .env 로드 (GMAIL_*, NAVER_*, PAGES_BASE_URL, BRIEF_RECIPIENT)
 set -a
 [ -f .env ] && . ./.env
