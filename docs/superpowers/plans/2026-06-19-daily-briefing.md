@@ -35,7 +35,7 @@
 
 **Interfaces:**
 - Consumes: 없음
-- Produces: `config.SETTINGS` (dict) — 키: `weather_locations` (list of `{name, lat, lon}`), `tickers` (dict), `model` (str), `pages_base_url` (str), `recipient` (str). `config.get_secret(name: str) -> str` (없으면 `RuntimeError`).
+- Produces: `config.SETTINGS` (dict) — 키: `weather_locations` (list of `{name, lat, lon}`), `tickers` (dict), `model` (str), `pages_base_url` (str), `recipients` (list[str], `BRIEF_RECIPIENT` 콤마 분리). `config.get_secret(name: str) -> str` (없으면 `RuntimeError`).
 
 - [ ] **Step 1: requirements.txt 작성**
 
@@ -88,6 +88,13 @@ def test_get_secret_missing_raises(monkeypatch):
     monkeypatch.delenv("MISSING_KEY", raising=False)
     with pytest.raises(RuntimeError):
         config.get_secret("MISSING_KEY")
+
+
+def test_recipients_parsed_as_list(monkeypatch):
+    import importlib
+    monkeypatch.setenv("BRIEF_RECIPIENT", "a@x.com, b@y.com ,c@z.com")
+    importlib.reload(config)
+    assert config.SETTINGS["recipients"] == ["a@x.com", "b@y.com", "c@z.com"]
 ```
 
 - [ ] **Step 5: 테스트 실패 확인**
@@ -113,7 +120,8 @@ SETTINGS = {
     },
     "model": "sonnet",
     "pages_base_url": os.environ.get("PAGES_BASE_URL", "http://localhost"),
-    "recipient": os.environ.get("BRIEF_RECIPIENT", "linkpooltest2@gmail.com"),
+    "recipients": [e.strip() for e in
+                   os.environ.get("BRIEF_RECIPIENT", "").split(",") if e.strip()],
 }
 
 
@@ -751,8 +759,8 @@ git commit -m "feat: web and email rendering (minimal templates)"
 
 **Interfaces:**
 - Consumes: `config.get_secret`, `smtplib`, `email.message`
-- Produces: `mailer.send(html: str, subject: str, recipient: str) -> bool`.
-  내부 `_smtp_send(msg)`를 `smtplib.SMTP_SSL("smtp.gmail.com", 465)`로 구현(테스트에서 monkeypatch). 발송 실패 시 1회 재시도 후 실패면 `False` 반환.
+- Produces: `mailer.send(html: str, subject: str, recipients: list[str]) -> bool`.
+  `msg["To"]`는 `", ".join(recipients)`. 빈 리스트면 발송 생략하고 `False`. 내부 `_smtp_send(msg)`를 `smtplib.SMTP_SSL("smtp.gmail.com", 465)`로 구현(테스트에서 monkeypatch). 발송 실패 시 1회 재시도 후 실패면 `False` 반환.
 
 - [ ] **Step 1: 실패 테스트 작성** — `tests/test_mailer.py`
 
@@ -760,7 +768,7 @@ git commit -m "feat: web and email rendering (minimal templates)"
 from src import mailer
 
 
-def test_send_success(monkeypatch):
+def test_send_success_multiple_recipients(monkeypatch):
     sent = {}
     def fake_send(msg):
         sent["to"] = msg["To"]
@@ -768,10 +776,16 @@ def test_send_success(monkeypatch):
     monkeypatch.setenv("GMAIL_USER", "me@gmail.com")
     monkeypatch.setenv("GMAIL_APP_PASSWORD", "pw")
     monkeypatch.setattr(mailer, "_smtp_send", fake_send)
-    ok = mailer.send("<p>hi</p>", "제목", "you@gmail.com")
+    ok = mailer.send("<p>hi</p>", "제목", ["a@x.com", "b@y.com"])
     assert ok is True
-    assert sent["to"] == "you@gmail.com"
+    assert sent["to"] == "a@x.com, b@y.com"
     assert sent["subject"] == "제목"
+
+
+def test_send_empty_recipients_returns_false(monkeypatch):
+    monkeypatch.setattr(mailer, "_smtp_send",
+                        lambda msg: (_ for _ in ()).throw(AssertionError("should not send")))
+    assert mailer.send("<p>hi</p>", "제목", []) is False
 
 
 def test_send_retries_then_fails(monkeypatch):
@@ -782,7 +796,7 @@ def test_send_retries_then_fails(monkeypatch):
     monkeypatch.setenv("GMAIL_USER", "me@gmail.com")
     monkeypatch.setenv("GMAIL_APP_PASSWORD", "pw")
     monkeypatch.setattr(mailer, "_smtp_send", boom)
-    ok = mailer.send("<p>hi</p>", "제목", "you@gmail.com")
+    ok = mailer.send("<p>hi</p>", "제목", ["you@gmail.com"])
     assert ok is False
     assert calls["n"] == 2  # 최초 + 재시도 1회
 ```
@@ -808,10 +822,12 @@ def _smtp_send(msg: EmailMessage) -> None:
         s.send_message(msg)
 
 
-def send(html: str, subject: str, recipient: str) -> bool:
+def send(html: str, subject: str, recipients: list) -> bool:
+    if not recipients:
+        return False
     msg = EmailMessage()
     msg["From"] = config.get_secret("GMAIL_USER")
-    msg["To"] = recipient
+    msg["To"] = ", ".join(recipients)
     msg["Subject"] = subject
     msg.set_content("HTML 메일입니다. HTML 지원 클라이언트로 보세요.")
     msg.add_alternative(html, subtype="html")
@@ -957,7 +973,7 @@ def run(dry_run: bool = False) -> dict:
     email_sent = False
     if not dry_run:
         subject = f"[AI 브리핑] {date_str} {now.strftime('%H:%M')}"
-        email_sent = mailer.send(email_html, subject, config.SETTINGS["recipient"])
+        email_sent = mailer.send(email_html, subject, config.SETTINGS["recipients"])
 
     return {"web_path": web_path, "archive_path": archive_path,
             "email_sent": email_sent}
