@@ -4,19 +4,19 @@
 
 **Goal:** 매일 3회 데이터를 수집해 Claude로 해석·요약하고, 웹(GitHub Pages)에 배포하면서 요약을 이메일(Gmail SMTP)로 발송하는 AI 데일리 브리핑 자동화.
 
-**Architecture:** 독립적인 collector들이 외부 소스에서 정규화된 dict를 만들고, `brief.py`가 Claude로 섹션 해석 + 이메일 요약을 생성, `render.py`가 웹/이메일 HTML로 렌더, `main.py`가 오케스트레이션하며 git push(웹 배포)와 SMTP 발송을 수행. GitHub Actions cron이 하루 3회 트리거.
+**Architecture:** 독립적인 collector들이 외부 소스에서 정규화된 dict를 만들고, `brief.py`가 로컬 Claude Code CLI(`claude -p`)로 섹션 해석 + 이메일 요약을 생성, `render.py`가 웹/이메일 HTML로 렌더, `main.py`가 오케스트레이션하며 git push(웹 배포)와 SMTP 발송을 수행. macOS launchd가 이 PC에서 하루 3회 트리거.
 
-**Tech Stack:** Python 3.11, yfinance, requests, feedparser, jinja2, anthropic SDK, pytest, GitHub Actions, GitHub Pages.
+**Tech Stack:** Python 3.11, yfinance, requests, feedparser, jinja2, **Claude Code CLI (`claude -p`)**, pytest, macOS launchd, GitHub Pages.
 
 ## Global Constraints
 
 - Python 3.11+. 의존성은 `requirements.txt`에 고정(`==` 버전).
 - 모든 collector 인터페이스: 모듈 함수 `collect(...) -> dict`, 네트워크/파싱만 담당, 해석 텍스트 생성 금지.
 - 외부 호출 실패는 예외를 던지지 말고 `{"ok": False, "error": str}` 형태로 반환(섹션 격리).
-- 시크릿은 환경변수에서만 읽음: `ANTHROPIC_API_KEY`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`. 코드/레포에 하드코딩 금지.
+- 시크릿은 환경변수에서만 읽음: `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`. 코드/레포에 하드코딩 금지. (ANTHROPIC_API_KEY 불필요 — Claude Code CLI 구독 사용)
 - 날씨 지역 2곳: 남양주시(`lat=37.636, lon=127.216`), 동탄(`lat=37.201, lon=127.073`). 시간대별 1시간 단위.
 - 시간대: 출력·파일명·스케줄 모두 KST(Asia/Seoul) 기준.
-- LLM 모델: `claude-sonnet-4-6`.
+- LLM: 로컬 `claude -p --model sonnet` (subprocess). API 키 없음.
 - Pages URL 형식: `https://<GH_USER>.github.io/<REPO>/` (이메일 링크는 환경변수 `PAGES_BASE_URL`로 주입).
 - TDD: 각 태스크는 실패 테스트 → 구현 → 통과 → 커밋 순서. 네트워크는 mock.
 
@@ -40,13 +40,14 @@
 - [ ] **Step 1: requirements.txt 작성**
 
 ```
-anthropic==0.69.0
 yfinance==0.2.66
 requests==2.32.5
 feedparser==6.0.11
 jinja2==3.1.6
 pytest==8.4.2
 ```
+
+> Claude는 SDK 대신 로컬 `claude` CLI를 subprocess로 호출하므로 anthropic 패키지 불필요.
 
 - [ ] **Step 2: pytest.ini 작성**
 
@@ -75,7 +76,7 @@ def test_settings_has_two_weather_locations():
 
 
 def test_settings_model_is_sonnet():
-    assert config.SETTINGS["model"] == "claude-sonnet-4-6"
+    assert config.SETTINGS["model"] == "sonnet"
 
 
 def test_get_secret_reads_env(monkeypatch):
@@ -110,7 +111,7 @@ SETTINGS = {
         "kr_memory": {"005930.KS": "삼성전자", "000660.KS": "SK하이닉스"},
         "fx": {"KRW=X": "USD/KRW", "EURKRW=X": "EUR/KRW", "JPYKRW=X": "JPY/KRW"},
     },
-    "model": "claude-sonnet-4-6",
+    "model": "sonnet",
     "pages_base_url": os.environ.get("PAGES_BASE_URL", "http://localhost"),
     "recipient": os.environ.get("BRIEF_RECIPIENT", "linkpooltest2@gmail.com"),
 }
@@ -493,10 +494,10 @@ git commit -m "feat: news collector (naver economy + google rss)"
 - Test: `tests/test_brief.py`
 
 **Interfaces:**
-- Consumes: 모든 collector 출력 dict, `anthropic` SDK, `config`
+- Consumes: 모든 collector 출력 dict, 로컬 `claude` CLI(subprocess), `config`
 - Produces: `brief.generate(raw: dict) -> dict` →
   `{"sections": {"markets": str, "memory": str, "weather": str, "news": str}, "summary": str}`.
-  `raw`는 `{"stocks":..., "fx":..., "weather":..., "news":...}`. 내부 `_call_claude(prompt: str) -> str`를 anthropic으로 구현(테스트에서 monkeypatch). Claude 실패 시 폴백: 각 섹션 `""`, summary는 `"(요약 생성 실패 — 수치만 표시)"`, 반환 dict에 `"degraded": True`.
+  `raw`는 `{"stocks":..., "fx":..., "weather":..., "news":...}`. 내부 `_call_claude(prompt: str) -> str`를 **`subprocess.run(["claude", "-p", "--model", "sonnet", prompt])`** 로 구현(테스트에서 monkeypatch). Claude 실패/타임아웃 시 폴백: 각 섹션 `""`, summary는 `"(요약 생성 실패 — 수치만 표시)"`, 반환 dict에 `"degraded": True`.
   Claude에 JSON 출력을 요청하고 파싱; 파싱 실패도 폴백 처리.
 
 - [ ] **Step 1: 실패 테스트 작성** — `tests/test_brief.py`
@@ -545,7 +546,7 @@ Expected: FAIL — `ModuleNotFoundError`
 
 ```python
 import json
-import anthropic
+import subprocess
 from src import config
 
 _SECTIONS = ("markets", "memory", "weather", "news")
@@ -566,13 +567,14 @@ _PROMPT = """당신은 한국어 데일리 브리핑 애널리스트입니다.
 
 
 def _call_claude(prompt: str) -> str:
-    client = anthropic.Anthropic(api_key=config.get_secret("ANTHROPIC_API_KEY"))
-    msg = client.messages.create(
-        model=config.SETTINGS["model"],
-        max_tokens=2000,
-        messages=[{"role": "user", "content": prompt}],
+    # 로컬 Claude Code CLI 헤드리스 호출 (로그인된 구독 사용, API 키 불필요)
+    result = subprocess.run(
+        ["claude", "-p", "--model", config.SETTINGS["model"], prompt],
+        capture_output=True, text=True, timeout=120,
     )
-    return msg.content[0].text
+    if result.returncode != 0:
+        raise RuntimeError(f"claude CLI failed: {result.stderr.strip()}")
+    return result.stdout
 
 
 def _fallback() -> dict:
@@ -1036,93 +1038,130 @@ git commit -m "feat: impeccable web and email design"
 
 ---
 
-### Task 10: GitHub Actions 워크플로 & 문서
+### Task 10: 로컬 스케줄(launchd) + 배포 스크립트 & 문서
 
 **Files:**
-- Create: `.github/workflows/brief.yml`
+- Create: `run.sh`
+- Create: `.env.example`
+- Create: `com.daily-briefing.plist` (LaunchAgent 템플릿)
 - Create: `README.md`
 
 **Interfaces:**
-- Consumes: 레포 Secrets, `src.main`
-- Produces: 하루 3회 cron 실행 → 데이터 생성 → `docs/` 커밋·푸시(Pages 배포) → 이메일 발송.
+- Consumes: `.env`(시크릿), `src.main`, 로컬 `claude` CLI, git remote
+- Produces: launchd가 하루 3회 `run.sh` 실행 → 데이터 생성 → `docs/` 커밋·푸시(Pages 배포) → 이메일 발송.
 
-- [ ] **Step 1: 워크플로 작성** — `.github/workflows/brief.yml`
+- [ ] **Step 1: 배포 스크립트 작성** — `run.sh`
 
-```yaml
-name: daily-briefing
-on:
-  schedule:
-    - cron: "0 22,4,10 * * *"   # KST 07:00 / 13:00 / 19:00
-  workflow_dispatch: {}
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")"
 
-permissions:
-  contents: write
+# .env 로드 (GMAIL_*, NAVER_*, PAGES_BASE_URL, BRIEF_RECIPIENT)
+set -a
+[ -f .env ] && . ./.env
+set +a
 
-jobs:
-  brief:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install -r requirements.txt
-      - name: Generate briefing, deploy, email
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GMAIL_USER: ${{ secrets.GMAIL_USER }}
-          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
-          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
-          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
-          PAGES_BASE_URL: ${{ vars.PAGES_BASE_URL }}
-          BRIEF_RECIPIENT: ${{ vars.BRIEF_RECIPIENT }}
-        run: python -m src.main
-      - name: Commit & push briefing
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/
-          git commit -m "chore: briefing $(date -u +%Y-%m-%dT%H:%MZ)" || echo "no changes"
-          git push
+# 절전 방지하며 실행 (최대 10분)
+caffeinate -i python3 -m src.main
+
+# 웹 배포: docs 변경분 커밋·푸시 → GitHub Pages
+git add docs/
+git commit -m "chore: briefing $(date +%Y-%m-%dT%H:%M)" || echo "no changes"
+git push origin main || echo "push skipped"
 ```
 
-- [ ] **Step 2: README 작성** — `README.md`
+실행권한 부여: `chmod +x run.sh`
+
+- [ ] **Step 2: 환경변수 예시** — `.env.example`
+
+```bash
+# 복사해서 .env 로 쓰고 값 채울 것 (.env 는 .gitignore 됨)
+GMAIL_USER=you@gmail.com
+GMAIL_APP_PASSWORD=xxxxxxxxxxxxxxxx
+NAVER_CLIENT_ID=your_naver_client_id
+NAVER_CLIENT_SECRET=your_naver_client_secret
+PAGES_BASE_URL=https://<github-user>.github.io/daily-briefing
+BRIEF_RECIPIENT=linkpooltest2@gmail.com
+```
+
+- [ ] **Step 3: LaunchAgent 템플릿 작성** — `com.daily-briefing.plist`
+
+`PROJECT_DIR`는 설치 시 실제 경로(`/Users/kangmin/dev/agents/daily-briefing`)로 치환.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.daily-briefing</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>PROJECT_DIR/run.sh</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Hour</key><integer>7</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Hour</key><integer>13</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Hour</key><integer>19</integer><key>Minute</key><integer>0</integer></dict>
+  </array>
+  <key>StandardOutPath</key><string>PROJECT_DIR/.omc/brief.out.log</string>
+  <key>StandardErrorPath</key><string>PROJECT_DIR/.omc/brief.err.log</string>
+  <key>RunAtLoad</key><false/>
+</dict>
+</plist>
+```
+
+> launchd는 로컬 시스템 시간대(KST 가정) 기준으로 Hour를 해석. 시스템 TZ가 KST인지 확인.
+
+- [ ] **Step 4: README 작성** — `README.md`
 
 ```markdown
 # Daily Briefing
 
-매일 3회 데이터를 수집해 Claude로 해석·요약하고, GitHub Pages에 배포 + 이메일 발송.
+매일 3회 데이터를 수집해 로컬 Claude Code CLI로 해석·요약하고, GitHub Pages에 배포 + 이메일 발송.
+
+## 사전 준비
+- 이 PC에 `claude` CLI 로그인 완료 (구독 사용, API 키 불필요)
+- Gmail 앱 비밀번호 (Google 계정 → 보안 → 2단계 인증 → 앱 비밀번호)
+- 네이버 검색 API (developers.naver.com → 애플리케이션 등록 → 검색)
+- GitHub 레포 + Pages (Settings → Pages → Deploy from branch `main` `/docs`)
 
 ## 설정
-1. 레포 Settings → Pages → Source: `Deploy from a branch`, branch `main`, folder `/docs`
-2. 레포 Settings → Secrets and variables → Actions:
-   - Secrets: `ANTHROPIC_API_KEY`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`
-   - Variables: `PAGES_BASE_URL` (예: `https://<user>.github.io/daily-briefing`), `BRIEF_RECIPIENT`
-3. Gmail 앱 비밀번호: Google 계정 → 보안 → 2단계 인증 → 앱 비밀번호 발급
+1. `cp .env.example .env` 후 값 채우기
+2. `pip install -r requirements.txt`
+3. `git remote add origin <your-repo>` (push 대상)
 
 ## 로컬 실행
-```bash
-pip install -r requirements.txt
-PAGES_BASE_URL=http://localhost python -m src.main --dry-run   # 이메일/배포 없이 docs/ 생성
-```
+\`\`\`bash
+PAGES_BASE_URL=http://localhost python3 -m src.main --dry-run   # 이메일/배포 없이 docs/ 생성
+./run.sh                                                        # 실제 생성+배포+발송
+\`\`\`
 
-## 스케줄
-GitHub Actions cron `0 22,4,10 * * *` (KST 07/13/19시). 수동 실행: Actions 탭 → Run workflow.
+## 스케줄 설치 (macOS launchd)
+\`\`\`bash
+sed "s|PROJECT_DIR|$(pwd)|g" com.daily-briefing.plist > ~/Library/LaunchAgents/com.daily-briefing.plist
+launchctl load ~/Library/LaunchAgents/com.daily-briefing.plist
+\`\`\`
+하루 3회 KST 07/13/19시 실행. 해제: `launchctl unload ~/Library/LaunchAgents/com.daily-briefing.plist`
+PC가 절전이면 정시 미실행 → 깨어날 때 1회 실행.
 
 ## 데이터 소스
-yfinance(증시·환율), Open-Meteo(날씨), 네이버 뉴스 검색 API(경제), Google News RSS(반도체).
+yfinance(증시·환율), Open-Meteo(날씨), 네이버 뉴스 검색 API(경제), Google News RSS(반도체). 해석: 로컬 Claude Code CLI.
 ```
 
-- [ ] **Step 3: 워크플로 YAML 문법 검증**
+- [ ] **Step 5: 실행권한 + plist 문법 검증**
 
-Run: `python -c "import yaml; yaml.safe_load(open('.github/workflows/brief.yml'))"`
-Expected: 에러 없이 종료 (PyYAML 없으면 `pip install pyyaml` 후 실행, 또는 육안 검토)
+Run: `chmod +x run.sh && plutil -lint com.daily-briefing.plist`
+Expected: `com.daily-briefing.plist: OK`
 
-- [ ] **Step 4: 커밋**
+- [ ] **Step 6: 커밋**
 
 ```bash
-git add .github/ README.md
-git commit -m "ci: github actions schedule + docs"
+git add run.sh .env.example com.daily-briefing.plist README.md
+git commit -m "feat: launchd schedule, deploy script, docs"
 ```
 
 ---
@@ -1132,14 +1171,14 @@ git commit -m "ci: github actions schedule + docs"
 **1. Spec coverage:**
 - 날씨 시간대별 2지역 → Task 3, Task 9 ✅
 - 미국증시/반도체/한국메모리/환율 → Task 2 ✅
-- 메모리 섹터 분석(Claude) → Task 5 ✅
+- 메모리 섹터 분석(Claude CLI) → Task 5 ✅
 - 뉴스(네이버 경제 + Google RSS) → Task 4 ✅
-- Claude 해석·요약 + 폴백 → Task 5 ✅
+- Claude CLI 해석·요약 + 폴백 → Task 5 ✅
 - 웹/이메일 렌더, 이메일=요약+링크 → Task 6 ✅
 - Gmail SMTP 발송 + 재시도 → Task 7 ✅
 - 오케스트레이션 + archive 무한누적 + dry-run → Task 8 ✅
 - impeccable 웹 디자인 → Task 9 ✅
-- GitHub Actions 3회 cron + Pages 배포 + Secrets → Task 10 ✅
+- 로컬 launchd 3회 스케줄 + Pages 배포(run.sh git push) + .env → Task 10 ✅
 - 에러 격리(collector ok 플래그) → Task 2~4, render 가드 ✅
 
 **2. Placeholder scan:** 모든 코드/테스트/명령 실제 내용 포함. Task 9만 impeccable 산출물에 의존하나 변수 계약 명시·기존 테스트로 회귀 방지.

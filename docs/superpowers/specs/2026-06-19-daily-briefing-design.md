@@ -60,7 +60,7 @@ README.md
 - **collectors/\***: 외부 소스 → 정규화된 dict 반환. 네트워크/파싱만 담당, 해석 없음.
   의존: 해당 라이브러리/HTTP. 인터페이스: `collect() -> dict`.
 - **brief.py**: 수집 dict → Claude 호출 → `{sections: {...해석...}, summary: "..."}` 반환.
-  의존: anthropic SDK. collectors를 모름(dict만 받음).
+  의존: 로컬 **Claude Code CLI**(`claude -p`) subprocess. API 키·SDK 불필요(로그인된 구독 사용). collectors를 모름(dict만 받음).
 - **render.py**: 데이터 + 해석 → 웹/이메일 HTML 문자열. 의존: jinja2 + templates.
 - **mailer.py**: HTML + 수신자 → 발송. 의존: smtplib. 콘텐츠를 모름.
 - **main.py**: 위를 순서대로 호출, 파일 출력, 에러 격리.
@@ -77,27 +77,26 @@ README.md
 
 ## 스케줄 & 배포
 
-- **실행**: GitHub Actions cron, 하루 3회
-  - KST 07:00 / 13:00 / 19:00 = UTC 22:00 / 04:00 / 10:00
-  - cron: `0 22,4,10 * * *`
-- **웹 배포**: Actions가 `docs/` 커밋·푸시 → GitHub Pages가 `/docs` 서빙
+- **실행 위치**: 이 PC(macOS) 로컬. 해석 생성에 로컬 Claude Code CLI를 쓰므로 클라우드 불가.
+- **스케줄**: macOS **launchd** (LaunchAgent), 하루 3회 KST 07:00 / 13:00 / 19:00
+  - PC가 절전이면 정시 미실행 → 깨어날 때 밀린 작업 1회 실행. 정시 보장하려면 `caffeinate`/`pmset` 보조.
+- **웹 배포**: 로컬 스크립트가 `docs/` 커밋·푸시 → GitHub Pages가 `/docs` 서빙
 - **Pages URL**: `https://<github-user>.github.io/<repo>/` (이메일 링크에 사용)
 
-> 참고: 원래 "이 PC에서" 요구였으나 GitHub Actions 선택으로 클라우드 실행됨(PC 꺼져도 동작). 로컬 실행이 필요하면 launchd 백업 스케줄 추가 가능.
+## 비밀/설정 (로컬 환경변수, 예: `.env` — git 제외)
 
-## 비밀키 (GitHub Secrets)
-
-- `ANTHROPIC_API_KEY` — Claude API
 - `GMAIL_USER` — 발송 Gmail 주소
 - `GMAIL_APP_PASSWORD` — Gmail 앱 비밀번호 (2단계 인증 후 발급)
 - `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` — 네이버 뉴스 검색 API
+- `PAGES_BASE_URL`, `BRIEF_RECIPIENT`
+- ~~ANTHROPIC_API_KEY~~ — 불필요 (Claude Code CLI 구독 사용)
 - 수신: `linkpooltest2@gmail.com` (발송=수신 동일)
 
 ## 에러 처리
 
 - collector 개별 실패: try/except로 격리, 해당 섹션 "데이터 없음" 표기 후 나머지 진행
-- Claude 호출 실패: 원본 데이터만으로 폴백 렌더 (해석 없이 수치만)
-- 이메일 발송 실패: 로그 기록 + 재시도 1회, 그래도 실패 시 Actions 잡 실패 처리
+- Claude(`claude -p`) 호출 실패/타임아웃: 원본 데이터만으로 폴백 렌더 (해석 없이 수치만)
+- 이메일 발송 실패: 로그 기록 + 재시도 1회
 - 웹 배포는 이메일과 독립 — 한쪽 실패가 다른 쪽 막지 않음
 
 ## 테스트
