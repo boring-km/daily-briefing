@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<title>AI 데일리 브리핑 — {{ generated_at }}</title></head>
+<body>
+<h1>AI 데일리 브리핑</h1>
+<p>{{ generated_at }}</p>
+
+<section><h2>시장</h2><p>{{ brief.sections.markets }}</p>
+{% for group, items in raw.stocks.groups.items() if raw.stocks.ok %}
+<h3>{{ group }}</h3><ul>
+{% for it in items %}<li>{{ it.name }}: {{ it.price }} ({{ it.change_pct }}%)</li>{% endfor %}
+</ul>{% endfor %}</section>
+
+<section><h2>메모리</h2><p>{{ brief.sections.memory }}</p></section>
+
+<section><h2>날씨</h2><p>{{ brief.sections.weather }}</p>
+{% for loc in raw.weather.locations if raw.weather.ok %}
+<h3>{{ loc.name }}</h3><ul>
+{% for h in loc.hourly %}<li>{{ h.time }} — {{ h.temp }}°C, 강수 {{ h.precip_prob }}%</li>{% endfor %}
+</ul>{% endfor %}</section>
+
+<section><h2>뉴스</h2><p>{{ brief.sections.news }}</p>
+<ul>{% for n in raw.news.naver_economy if raw.news.ok %}
+<li><a href="{{ n.link }}">{{ n.title }}</a></li>{% endfor %}</ul></section>
+</body></html>
