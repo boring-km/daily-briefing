@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 from src import config
 
@@ -27,11 +28,17 @@ _PROMPT = """당신은 한국어 데일리 브리핑 애널리스트입니다.
 """
 
 
+def _clean_env() -> dict:
+    # 부모가 Claude Code 세션이면 CLAUDECODE/CLAUDE_CODE_* 가 주입돼
+    # `claude -p`가 중첩 컨텍스트로 오작동(메타 응답)함 → 해당 변수 제거.
+    return {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE")}
+
+
 def _call_claude(prompt: str) -> str:
     # 로컬 Claude Code CLI 헤드리스 호출 (로그인된 구독 사용, API 키 불필요)
     result = subprocess.run(
         ["claude", "-p", "--model", config.SETTINGS["model"], prompt],
-        capture_output=True, text=True, timeout=120,
+        capture_output=True, text=True, timeout=180, env=_clean_env(),
     )
     if result.returncode != 0:
         raise RuntimeError(f"claude CLI failed: {result.stderr.strip()}")
@@ -48,7 +55,9 @@ def generate(raw: dict) -> dict:
         prompt = _PROMPT.format(data=json.dumps(raw, ensure_ascii=False))
         text = _call_claude(prompt)
         start, end = text.find("{"), text.rfind("}")
-        parsed = json.loads(text[start:end + 1])
+        # strict=False: 불릿 줄바꿈(\n)이 JSON 문자열 값 안에 raw로 들어와도 허용
+        # (claude가 멀티라인 불릿을 escape 안 한 채 출력함).
+        parsed = json.loads(text[start:end + 1], strict=False)
         if "sections" not in parsed or "summary" not in parsed:
             return _fallback()
         for s in _SECTIONS:
