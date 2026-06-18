@@ -4,11 +4,13 @@ from src import config
 
 def _quote(symbol: str):
     t = yf.Ticker(symbol)
-    hist = t.history(period="2d")
-    if len(hist) < 1:
+    # period="5d" + dropna: 오늘/휴장일 행은 Close가 NaN이라 유효 종가만 추림
+    # (한국장 005930.KS 등은 장중/지연 시 최신 행이 NaN).
+    closes = t.history(period="5d")["Close"].dropna()
+    if len(closes) < 1:
         raise ValueError(f"no data for {symbol}")
-    last = float(hist["Close"].iloc[-1])
-    prev = float(hist["Close"].iloc[-2]) if len(hist) >= 2 else last
+    last = float(closes.iloc[-1])
+    prev = float(closes.iloc[-2]) if len(closes) >= 2 else last
     change_pct = ((last - prev) / prev * 100) if prev else 0.0
     return round(last, 2), round(change_pct, 2)
 
