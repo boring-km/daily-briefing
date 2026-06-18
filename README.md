@@ -15,7 +15,7 @@
 
 ## 로컬 실행
 ```bash
-PAGES_BASE_URL=http://localhost python3 -m src.main --dry-run   # 이메일/배포 없이 docs/ 생성
+PAGES_BASE_URL=http://localhost .venv/bin/python -m src.main --dry-run   # 이메일/배포 없이 docs/ 생성
 ./run.sh                                                        # 실제 생성+배포+발송
 ```
 
