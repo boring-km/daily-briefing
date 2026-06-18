@@ -17,7 +17,7 @@ def collect() -> dict:
     try:
         tickers = config.SETTINGS["tickers"]
         groups = {}
-        for group in ("us_index", "semis", "kr_memory"):
+        for group in [g for g in tickers if g != "fx"]:
             items = []
             for symbol, name in tickers[group].items():
                 price, change_pct = _quote(symbol)

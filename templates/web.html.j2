@@ -275,7 +275,7 @@
       <p class="read">{{ brief.sections.markets }}</p>
 
       {% if raw.stocks.ok %}
-        {% set _labels = {"us_index": "미국 증시", "semis": "글로벌 반도체", "kr_memory": "한국 메모리"} %}
+        {% set _labels = {"us_index": "미국 증시", "us_m7": "미국 빅테크 M7", "semis": "글로벌 반도체", "kr_memory": "한국 메모리"} %}
         {% for group, items in raw.stocks.groups.items() %}
         <div class="group">
           <h3>{{ _labels[group] if group in _labels else group }}</h3>
@@ -376,6 +376,16 @@
           {% if raw.news.global_semi %}
           <ol class="feed">
             {% for n in raw.news.global_semi %}
+            <li><a href="{{ n.link }}" target="_blank" rel="noopener"><span class="title">{{ n.title }}</span></a></li>
+            {% endfor %}
+          </ol>
+          {% else %}<div class="nodata">기사 없음</div>{% endif %}
+        </div>
+        <div class="news-col">
+          <h3>코스피·나스닥 시장</h3>
+          {% if raw.news.market_news %}
+          <ol class="feed">
+            {% for n in raw.news.market_news %}
             <li><a href="{{ n.link }}" target="_blank" rel="noopener"><span class="title">{{ n.title }}</span></a></li>
             {% endfor %}
           </ol>

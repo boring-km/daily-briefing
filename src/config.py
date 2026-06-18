@@ -7,6 +7,8 @@ SETTINGS = {
     ],
     "tickers": {
         "us_index": {"^GSPC": "S&P 500", "^IXIC": "NASDAQ", "^SOX": "SOX"},
+        "us_m7": {"AAPL": "Apple", "MSFT": "Microsoft", "GOOGL": "Alphabet",
+                  "AMZN": "Amazon", "META": "Meta", "TSLA": "Tesla", "NVDA": "NVIDIA"},
         "semis": {"NVDA": "NVIDIA", "AMD": "AMD", "MU": "Micron", "TSM": "TSMC"},
         "kr_memory": {"005930.KS": "삼성전자", "000660.KS": "SK하이닉스"},
         "fx": {"KRW=X": "USD/KRW", "EURKRW=X": "EUR/KRW", "JPYKRW=X": "JPY/KRW"},

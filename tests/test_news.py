@@ -10,6 +10,7 @@ def test_collect_combines_sources(monkeypatch):
     assert out["ok"] is True
     assert out["naver_economy"][0]["title"] == "경제뉴스"
     assert out["global_semi"][0]["title"] == "chip news"
+    assert len(out["market_news"]) > 0
 
 
 def test_collect_failure(monkeypatch):

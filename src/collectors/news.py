@@ -36,6 +36,7 @@ def collect() -> dict:
             "ok": True,
             "naver_economy": _naver("경제", 6),
             "global_semi": _rss(_GOOGLE_SEMI_RSS, 6),
+            "market_news": _naver("코스피", 4) + _naver("나스닥", 4),
         }
     except Exception as e:
         return {"ok": False, "error": str(e)}
