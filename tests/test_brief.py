@@ -42,6 +42,8 @@ def test_generate_handles_unescaped_quotes_and_newlines(monkeypatch):
 
 
 def test_generate_fallback_on_error(monkeypatch):
+    monkeypatch.setattr(brief, "_RETRY_DELAYS", (0, 0))  # backoff 없이 빠르게
+
     def boom(p):
         raise RuntimeError("rate limit")
     monkeypatch.setattr(brief, "_call_claude", boom)
@@ -53,6 +55,24 @@ def test_generate_fallback_on_error(monkeypatch):
 
 def test_generate_fallback_on_unparseable(monkeypatch):
     # 마커 하나도 없는 출력 → 파싱 실패 → 폴백
+    monkeypatch.setattr(brief, "_RETRY_DELAYS", (0, 0))
     monkeypatch.setattr(brief, "_call_claude", lambda p: "그냥 잡담, 마커 없음")
     out = brief.generate(RAW)
     assert out["degraded"] is True
+
+
+def test_generate_retries_then_succeeds(monkeypatch):
+    # 첫 호출 실패 후 재시도에서 정상 마커 → 복구되어 degraded 아님
+    monkeypatch.setattr(brief, "_RETRY_DELAYS", (0, 0))
+    calls = {"n": 0}
+
+    def flaky(p):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("transient")
+        return _MARKER_OUT
+    monkeypatch.setattr(brief, "_call_claude", flaky)
+    out = brief.generate(RAW)
+    assert out.get("degraded") is not True
+    assert out["summary"] == "핵심 요약 문장."
+    assert calls["n"] == 2

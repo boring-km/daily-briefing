@@ -1,9 +1,28 @@
 import os
 import re
 import subprocess
+import time
+from datetime import datetime, timezone, timedelta
 from src import config
 
 _SECTIONS = ("markets", "memory", "weather", "news")
+
+# 스케줄(launchd) 실행 시 claude CLI가 간헐적으로 실패해도 원인이 어디에도
+# 안 남아 며칠씩 디버깅 불가였음 → 호출 결과를 항상 로그로 남기고 재시도.
+_LOG_PATH = os.path.join(".omc", "logs", "brief-llm.log")
+_MAX_ATTEMPTS = 3
+_RETRY_DELAYS = (5, 15)  # attempt 사이 backoff(초)
+_KST = timezone(timedelta(hours=9))
+
+
+def _log(msg: str) -> None:
+    try:
+        os.makedirs(os.path.dirname(_LOG_PATH), exist_ok=True)
+        ts = datetime.now(_KST).strftime("%Y-%m-%d %H:%M:%S")
+        with open(_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(f"[{ts}] {msg}\n")
+    except Exception:
+        pass  # 로깅 실패가 브리핑을 막아선 안 됨
 
 # JSON 대신 마커 구분 포맷 사용: LLM이 따옴표·줄바꿈을 escape 안 해도 안전하게 파싱됨.
 _PROMPT = """당신은 한국어 데일리 브리핑 애널리스트입니다.
@@ -48,6 +67,9 @@ def _call_claude(prompt: str) -> str:
         ["claude", "-p", "--model", config.SETTINGS["model"], prompt],
         capture_output=True, text=True, timeout=180, env=_clean_env(),
     )
+    # 실패 사유 추적용: rc/길이/stderr 한 줄 요약을 항상 남김.
+    _log(f"claude rc={result.returncode} out_len={len(result.stdout)} "
+         f"err={result.stderr.strip()[:200]!r}")
     if result.returncode != 0:
         raise RuntimeError(f"claude CLI failed: {result.stderr.strip()}")
     return result.stdout
@@ -76,10 +98,22 @@ def _fallback() -> dict:
 
 def generate(raw: dict) -> dict:
     import json
-    try:
-        prompt = _PROMPT.format(data=json.dumps(raw, ensure_ascii=False))
-        text = _call_claude(prompt)
-        result = _parse(text)
-        return result if result else _fallback()
-    except Exception:
-        return _fallback()
+    prompt = _PROMPT.format(data=json.dumps(raw, ensure_ascii=False))
+    last_err = "unknown"
+    for attempt in range(1, _MAX_ATTEMPTS + 1):
+        try:
+            text = _call_claude(prompt)
+            result = _parse(text)
+            if result:
+                if attempt > 1:
+                    _log(f"recovered on attempt {attempt}")
+                return result
+            # rc=0 인데 마커 없음(빈/메타 응답) → 재시도 대상.
+            last_err = f"parse failed (out_len={len(text)}, head={text[:120]!r})"
+        except Exception as e:
+            last_err = repr(e)
+        _log(f"attempt {attempt}/{_MAX_ATTEMPTS} failed: {last_err}")
+        if attempt < _MAX_ATTEMPTS:
+            time.sleep(_RETRY_DELAYS[attempt - 1])
+    _log(f"all {_MAX_ATTEMPTS} attempts failed → fallback. last_err={last_err}")
+    return _fallback()
